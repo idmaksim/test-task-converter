@@ -16,6 +16,7 @@ import { I18nService } from 'nestjs-i18n';
 import { Response } from 'express';
 import { existsSync, unlinkSync } from 'fs';
 import { join, basename } from 'path';
+import { access, unlink } from 'fs/promises';
 
 @Controller()
 @ApiTags('Video Conversion')
@@ -73,18 +74,35 @@ export class AppController {
   ) {
     const filePath = join(process.cwd(), 'converted', filename);
 
-    if (!existsSync(filePath)) {
-      throw new BadRequestException('File not found');
+    try {
+      await access(filePath);
+    } catch {
+      throw new BadRequestException('Файл не найден');
     }
 
-    res.download(filePath, () => {
-      unlinkSync(filePath);
+    res.download(filePath, async () => {
       const uploadPath = join(
         process.cwd(),
         'uploads',
         filename.replace('.mp4', '.mov'),
       );
-      if (existsSync(uploadPath)) unlinkSync(uploadPath);
+
+      await Promise.all(
+        [filePath, uploadPath].map(async (path) => {
+          try {
+            await access(path);
+            await unlink(path);
+            this.appService['logger'].log(`Удален после скачивания: ${path}`);
+          } catch (err) {
+            if (err.code !== 'ENOENT') {
+              this.appService['logger'].error(
+                `Delete error: ${path}`,
+                err.stack,
+              );
+            }
+          }
+        }),
+      );
     });
   }
 }

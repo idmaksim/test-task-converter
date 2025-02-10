@@ -41,11 +41,13 @@ export class AppController {
   @UseInterceptors(
     FileInterceptor('video', {
       dest: './uploads',
+      limits: {
+        fileSize: 2 * 1024 * 1024 * 1024, // 2GB
+      },
       fileFilter: (req, file, callback) => {
-        if (!file.originalname.match(/\.(mov)$/)) {
+        if (!file.originalname.match(/\.(mov)$/i)) {
           return callback(
-            new BadRequestException('Only MOV files are allowed'),
-
+            new BadRequestException('Разрешены только MOV файлы'),
             false,
           );
         }

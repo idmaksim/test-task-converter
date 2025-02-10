@@ -13,7 +13,7 @@ import { join } from 'path';
         'en-*': 'en',
       },
       loaderOptions: {
-        path: join(__dirname, '../../i18n/'),
+        path: join(process.cwd(), 'i18n'),
         watch: true,
       },
       resolvers: [AcceptLanguageResolver],
